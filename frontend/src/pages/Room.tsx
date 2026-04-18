@@ -7,6 +7,7 @@ import RoomReadiness from "../components/Room/RoomReadiness";
 import TeamTugOfWar from "../components/Room/TeamTugOfWar";
 import TeamColumns from "../components/Room/TeamColumns";
 import TeamSwitchPanel from "../components/Room/TeamSwitchPanel";
+import { subscribeRoomUpdates } from "../socket/roomSocket";
 import { useRoomStore } from "../store/roomStore";
 import { useUserStore } from "../store/userStore";
 import type { TeamId } from "../types/room";
@@ -22,6 +23,7 @@ const Room = () => {
   const fetchRoom = useRoomStore((state) => state.fetchRoom);
   const joinRoom = useRoomStore((state) => state.joinRoom);
   const switchTeam = useRoomStore((state) => state.switchTeam);
+  const setActiveRoom = useRoomStore((state) => state.setActiveRoom);
   const params = new URLSearchParams(location.search);
   const status = params.get("status") ?? "lobby";
 
@@ -41,12 +43,12 @@ const Room = () => {
     }
 
     void fetchRoom(normalizedCode);
-    const timer = window.setInterval(() => {
-      void fetchRoom(normalizedCode);
-    }, 3000);
+    const unsubscribe = subscribeRoomUpdates(normalizedCode, (room) => {
+      setActiveRoom(room);
+    });
 
-    return () => window.clearInterval(timer);
-  }, [fetchRoom, normalizedCode]);
+    return () => unsubscribe();
+  }, [fetchRoom, normalizedCode, setActiveRoom]);
 
   const currentPlayer = useMemo(() => {
     if (!activeRoom) {

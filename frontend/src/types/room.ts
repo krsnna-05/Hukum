@@ -8,6 +8,7 @@ export type RoomPlayer = {
   team: TeamId;
   joinedAt: string;
   isHandler: boolean;
+  isPlaying: boolean;
 };
 
 export type RoomTeam = {
@@ -22,6 +23,7 @@ export type Room = {
   roomCode: string;
   handlerId: string;
   status: RoomStatus;
+  playingPlayerId: string | null;
   minPlayersToStart: number;
   maxPlayersTotal: number;
   canStartGame: boolean;

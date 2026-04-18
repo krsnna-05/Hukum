@@ -87,3 +87,15 @@ export const applyRoundResultRequest = async (
     bid,
   });
 };
+
+export const setPlayingStateRequest = async (
+  roomCode: string,
+  playerId: string,
+  isPlaying: boolean,
+): Promise<ApiResult> => {
+  return request<ApiResult>("/api/rooms/playing-state", "POST", {
+    roomCode,
+    playerId,
+    isPlaying,
+  });
+};

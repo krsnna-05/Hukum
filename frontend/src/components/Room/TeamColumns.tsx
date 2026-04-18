@@ -69,6 +69,12 @@ const TeamColumns = ({ room }: TeamColumnsProps) => {
                   >
                     <span className="text-sm text-white">{player.name}</span>
                     <div className="flex flex-wrap items-center gap-2">
+                      {player.isPlaying ? (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300/35 bg-emerald-300/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-100">
+                          Playing...
+                        </span>
+                      ) : null}
+
                       {player.isHandler ? (
                         <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/30 bg-amber-300/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-100">
                           <Crown className="h-3 w-3" />

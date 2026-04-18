@@ -17,6 +17,7 @@ export const toPublicRoom = (room: Room): PublicRoom => {
         .map((player) => ({
           ...player,
           isHandler: player.id === room.handlerId,
+          isPlaying: player.id === room.playingPlayerId,
         }));
 
       result[teamId] = {
@@ -36,6 +37,7 @@ export const toPublicRoom = (room: Room): PublicRoom => {
     roomCode: room.roomCode,
     handlerId: room.handlerId,
     status: room.status,
+    playingPlayerId: room.playingPlayerId,
     minPlayersToStart: MIN_PLAYERS_TO_START,
     maxPlayersTotal: MAX_TOTAL_PLAYERS,
     canStartGame:

@@ -4,8 +4,10 @@ import {
   createRoom,
   getRoom,
   joinRoom,
+  setPlayingState,
   switchPlayerTeam,
 } from "../services/rooms/roomService";
+import { emitRoomUpdated } from "../socket/realtime";
 import { TeamId } from "../types/room";
 
 const router = Router();
@@ -27,6 +29,7 @@ router.post("/create", async (req, res) => {
 
   try {
     const result = await createRoom(playerId, playerName);
+    emitRoomUpdated(result.room);
     res.status(201).json(result);
   } catch (error) {
     const message =
@@ -49,6 +52,7 @@ router.post("/join", async (req, res) => {
 
   try {
     const result = await joinRoom(roomCode, playerId, playerName);
+    emitRoomUpdated(result.room);
     res.status(200).json(result);
   } catch (error) {
     const message =
@@ -91,6 +95,7 @@ router.post("/switch-team", async (req, res) => {
 
   try {
     const result = await switchPlayerTeam(roomCode, playerId, toTeam);
+    emitRoomUpdated(result.room);
     res.status(200).json(result);
   } catch (error) {
     const message =
@@ -119,10 +124,35 @@ router.post("/round-result", async (req, res) => {
 
   try {
     const result = await applyRoundResult(roomCode, winningTeam, bid);
+    emitRoomUpdated(result.room);
     res.status(200).json(result);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unable to apply round result.";
+    const statusCode = message === "Room not found." ? 404 : 400;
+    sendError(res, message, statusCode);
+  }
+});
+
+router.post("/playing-state", async (req, res) => {
+  const { roomCode, playerId, isPlaying } = req.body as {
+    roomCode?: string;
+    playerId?: string;
+    isPlaying?: boolean;
+  };
+
+  if (!roomCode || !playerId || typeof isPlaying !== "boolean") {
+    sendError(res, "roomCode, playerId, and isPlaying are required.");
+    return;
+  }
+
+  try {
+    const result = await setPlayingState(roomCode, playerId, isPlaying);
+    emitRoomUpdated(result.room);
+    res.status(200).json(result);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unable to set playing state.";
     const statusCode = message === "Room not found." ? 404 : 400;
     sendError(res, message, statusCode);
   }

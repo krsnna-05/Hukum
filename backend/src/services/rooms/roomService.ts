@@ -82,6 +82,7 @@ export const createRoom = async (
     maxPlayersPerTeam: MAX_PLAYERS_PER_TEAM,
     createdAt: now,
     updatedAt: now,
+    playingPlayerId: null,
     teamPoints: {
       bid: 0,
       challenge: 0,
@@ -241,5 +242,41 @@ export const applyRoundResult = async (
   return {
     room: toPublicRoom(room),
     assignedTeam: winningTeam,
+  };
+};
+
+export const setPlayingState = async (
+  roomCode: string,
+  playerId: string,
+  isPlaying: boolean,
+): Promise<RoomActionResult> => {
+  if (!playerId.trim()) {
+    throw new Error("Player id is required.");
+  }
+
+  const room = await getRoomByCode(roomCode);
+
+  if (!room) {
+    throw new Error("Room not found.");
+  }
+
+  const normalizedPlayerId = playerId.trim();
+  const player = room.players[normalizedPlayerId];
+
+  if (!player) {
+    throw new Error("Player is not part of this room.");
+  }
+
+  if (isPlaying) {
+    room.playingPlayerId = normalizedPlayerId;
+  } else if (room.playingPlayerId === normalizedPlayerId) {
+    room.playingPlayerId = null;
+  }
+
+  await saveRoom(room);
+
+  return {
+    room: toPublicRoom(room),
+    assignedTeam: player.team,
   };
 };

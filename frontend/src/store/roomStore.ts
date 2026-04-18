@@ -4,6 +4,7 @@ import {
   createRoomRequest,
   getRoomRequest,
   joinRoomRequest,
+  setPlayingStateRequest,
   switchTeamRequest,
 } from "../api/rooms";
 import type { Room, TeamId } from "../types/room";
@@ -35,8 +36,14 @@ type RoomState = {
     winningTeam: TeamId,
     bid: number,
   ) => Promise<void>;
+  setPlayingState: (
+    roomCode: string,
+    playerId: string,
+    isPlaying: boolean,
+  ) => Promise<void>;
   clearError: () => void;
   resetRoom: () => void;
+  setActiveRoom: (room: Room) => void;
 };
 
 const normalizeRoomCode = (value: string) => value.trim().toUpperCase();
@@ -182,7 +189,38 @@ export const useRoomStore = create<RoomState>()((set, get) => ({
     }
   },
 
+  setPlayingState: async (roomCode, playerId, isPlaying) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const { room } = await setPlayingStateRequest(
+        roomCode,
+        playerId,
+        isPlaying,
+      );
+      set({
+        activeRoom: room,
+        isLoading: false,
+        error: null,
+        lastAction: "switched",
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to update playing state.";
+      set({ isLoading: false, error: message });
+    }
+  },
+
   clearError: () => set({ error: null }),
+
+  setActiveRoom: (room) =>
+    set({
+      activeRoom: room,
+      roomCodeInput: room.roomCode,
+      error: null,
+    }),
 
   resetRoom: () => set({ ...initialRoomState }),
 }));

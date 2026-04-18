@@ -1,6 +1,8 @@
 import "dotenv/config";
+import { createServer } from "http";
 import app from "./app";
 import { connectRedis, disconnectRedis } from "./config/redis";
+import { initSocketServer } from "./socket/realtime";
 
 const PORT = Number(process.env.PORT) || 3000;
 
@@ -8,7 +10,10 @@ const startServer = async (): Promise<void> => {
   try {
     await connectRedis();
 
-    app.listen(PORT, () => {
+    const httpServer = createServer(app);
+    initSocketServer(httpServer);
+
+    httpServer.listen(PORT, () => {
       console.log(`Server is running on http://localhost:${PORT}`);
     });
   } catch (error) {
