@@ -1,8 +1,10 @@
 import { useEffect, useMemo } from "react";
-import { Link, useLocation, useParams } from "react-router";
+import { Link, useLocation, useNavigate, useParams } from "react-router";
+import BiddingBoard from "../components/Room/BiddingBoard";
 import LobbyCapacity from "../components/Room/LobbyCapacity";
 import Navbar from "../components/Navbar";
 import RoomHeader from "../components/Room/RoomHeader";
+import RoomStartPanel from "../components/Room/RoomStartPanel";
 import RoomReadiness from "../components/Room/RoomReadiness";
 import TeamTugOfWar from "../components/Room/TeamTugOfWar";
 import TeamColumns from "../components/Room/TeamColumns";
@@ -15,6 +17,7 @@ import type { TeamId } from "../types/room";
 const Room = () => {
   const { roomCode } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const userId = useUserStore((state) => state.userId);
   const playerName = useUserStore((state) => state.playerName);
   const activeRoom = useRoomStore((state) => state.activeRoom);
@@ -22,6 +25,9 @@ const Room = () => {
   const error = useRoomStore((state) => state.error);
   const fetchRoom = useRoomStore((state) => state.fetchRoom);
   const joinRoom = useRoomStore((state) => state.joinRoom);
+  const startGame = useRoomStore((state) => state.startGame);
+  const placeBid = useRoomStore((state) => state.placeBid);
+  const selectTrump = useRoomStore((state) => state.selectTrump);
   const switchTeam = useRoomStore((state) => state.switchTeam);
   const setActiveRoom = useRoomStore((state) => state.setActiveRoom);
   const params = new URLSearchParams(location.search);
@@ -49,6 +55,21 @@ const Room = () => {
 
     return () => unsubscribe();
   }, [fetchRoom, normalizedCode, setActiveRoom]);
+
+  useEffect(() => {
+    if (!activeRoom?.status || !roomCode) {
+      return;
+    }
+
+    if (status !== activeRoom.status) {
+      navigate(
+        `/room/${encodeURIComponent(roomCode)}?status=${activeRoom.status}`,
+        {
+          replace: true,
+        },
+      );
+    }
+  }, [activeRoom?.status, navigate, roomCode, status]);
 
   const currentPlayer = useMemo(() => {
     if (!activeRoom) {
@@ -83,6 +104,14 @@ const Room = () => {
     }
 
     await switchTeam(activeRoom.roomCode, currentPlayer.id, otherTeam);
+  };
+
+  const handleStartGame = async () => {
+    if (!activeRoom) {
+      return;
+    }
+
+    await startGame(activeRoom.roomCode, userId);
   };
 
   if (!playerName) {
@@ -124,11 +153,22 @@ const Room = () => {
 
           <RoomReadiness room={activeRoom} />
 
+          {activeRoom?.status === "lobby" ? (
+            <RoomStartPanel
+              room={activeRoom}
+              isHandler={activeRoom.handlerId === userId}
+              isLoading={isLoading}
+              onStart={() => {
+                void handleStartGame();
+              }}
+            />
+          ) : null}
+
           <TeamTugOfWar room={activeRoom} />
 
           <LobbyCapacity room={activeRoom} />
 
-          {currentPlayer && otherTeam ? (
+          {activeRoom?.status === "lobby" && currentPlayer && otherTeam ? (
             <TeamSwitchPanel
               currentPlayer={currentPlayer}
               otherTeam={otherTeam}
@@ -136,6 +176,20 @@ const Room = () => {
               targetTeamFull={targetTeamFull}
               onSwitch={() => {
                 void handleSwitch();
+              }}
+            />
+          ) : null}
+
+          {activeRoom?.status === "bid" ? (
+            <BiddingBoard
+              room={activeRoom}
+              currentPlayerId={userId}
+              isLoading={isLoading}
+              onPlaceBid={(bid) => {
+                void placeBid(activeRoom.roomCode, userId, bid);
+              }}
+              onSelectTrump={(trumpSuit) => {
+                void selectTrump(activeRoom.roomCode, userId, trumpSuit);
               }}
             />
           ) : null}

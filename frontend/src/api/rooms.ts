@@ -1,8 +1,6 @@
 import type { Room, TeamId } from "../types/room";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ||
-  "http://localhost:3000";
+import { API_BASE_URL } from "./baseUrl";
 
 type ApiResult = {
   room: Room;
@@ -85,6 +83,40 @@ export const applyRoundResultRequest = async (
     roomCode,
     winningTeam,
     bid,
+  });
+};
+
+export const startGameRequest = async (
+  roomCode: string,
+  playerId: string,
+): Promise<ApiResult> => {
+  return request<ApiResult>("/api/rooms/start-game", "POST", {
+    roomCode,
+    playerId,
+  });
+};
+
+export const placeBidRequest = async (
+  roomCode: string,
+  playerId: string,
+  bid: number,
+): Promise<ApiResult> => {
+  return request<ApiResult>("/api/rooms/place-bid", "POST", {
+    roomCode,
+    playerId,
+    bid,
+  });
+};
+
+export const selectTrumpRequest = async (
+  roomCode: string,
+  playerId: string,
+  trumpSuit: string,
+): Promise<ApiResult> => {
+  return request<ApiResult>("/api/rooms/select-trump", "POST", {
+    roomCode,
+    playerId,
+    trumpSuit,
   });
 };
 

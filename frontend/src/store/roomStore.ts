@@ -4,7 +4,10 @@ import {
   createRoomRequest,
   getRoomRequest,
   joinRoomRequest,
+  placeBidRequest,
+  selectTrumpRequest,
   setPlayingStateRequest,
+  startGameRequest,
   switchTeamRequest,
 } from "../api/rooms";
 import type { Room, TeamId } from "../types/room";
@@ -35,6 +38,13 @@ type RoomState = {
     roomCode: string,
     winningTeam: TeamId,
     bid: number,
+  ) => Promise<void>;
+  startGame: (roomCode: string, playerId: string) => Promise<void>;
+  placeBid: (roomCode: string, playerId: string, bid: number) => Promise<void>;
+  selectTrump: (
+    roomCode: string,
+    playerId: string,
+    trumpSuit: string,
   ) => Promise<void>;
   setPlayingState: (
     roomCode: string,
@@ -189,6 +199,63 @@ export const useRoomStore = create<RoomState>()((set, get) => ({
     }
   },
 
+  startGame: async (roomCode, playerId) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const { room } = await startGameRequest(roomCode, playerId);
+      set({
+        activeRoom: room,
+        roomCodeInput: room.roomCode,
+        isLoading: false,
+        error: null,
+        lastAction: "created",
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unable to start game.";
+      set({ isLoading: false, error: message });
+    }
+  },
+
+  placeBid: async (roomCode, playerId, bid) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const { room } = await placeBidRequest(roomCode, playerId, bid);
+      set({
+        activeRoom: room,
+        roomCodeInput: room.roomCode,
+        isLoading: false,
+        error: null,
+        lastAction: "switched",
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unable to place bid.";
+      set({ isLoading: false, error: message });
+    }
+  },
+
+  selectTrump: async (roomCode, playerId, trumpSuit) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const { room } = await selectTrumpRequest(roomCode, playerId, trumpSuit);
+      set({
+        activeRoom: room,
+        roomCodeInput: room.roomCode,
+        isLoading: false,
+        error: null,
+        lastAction: "switched",
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unable to select trump.";
+      set({ isLoading: false, error: message });
+    }
+  },
+
   setPlayingState: async (roomCode, playerId, isPlaying) => {
     set({ isLoading: true, error: null });
 
@@ -220,6 +287,7 @@ export const useRoomStore = create<RoomState>()((set, get) => ({
       activeRoom: room,
       roomCodeInput: room.roomCode,
       error: null,
+      lastAction: null,
     }),
 
   resetRoom: () => set({ ...initialRoomState }),

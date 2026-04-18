@@ -1,9 +1,9 @@
 import { io, Socket } from "socket.io-client";
 import type { Room } from "../types/room";
 
-const SOCKET_URL =
-  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ||
-  "http://localhost:3000";
+import { API_BASE_URL } from "../api/baseUrl";
+
+const SOCKET_URL = API_BASE_URL;
 
 let socket: Socket | null = null;
 

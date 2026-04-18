@@ -14,6 +14,7 @@ const TeamColumns = ({ room }: TeamColumnsProps) => {
   const teamsBalanced =
     (room?.teams?.bid?.players.length ?? 0) ===
     (room?.teams?.challenge?.players.length ?? 0);
+  const currentBidPlayerId = room?.currentBidPlayerId ?? null;
 
   const readinessLabel = canStart
     ? "Ready to start"
@@ -67,8 +68,23 @@ const TeamColumns = ({ room }: TeamColumnsProps) => {
                     key={player.id}
                     className="flex flex-col gap-2 rounded-xl border border-white/10 bg-black/30 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
                   >
-                    <span className="text-sm text-white">{player.name}</span>
+                    <div className="min-w-0">
+                      <span className="block truncate text-sm text-white">
+                        {player.name}
+                      </span>
+                      {room?.status === "bid" ? (
+                        <span className="mt-1 block text-[11px] uppercase tracking-[0.14em] text-emerald-50/55">
+                          Bid: {room?.bids?.[player.id] ?? "pending"}
+                        </span>
+                      ) : null}
+                    </div>
                     <div className="flex flex-wrap items-center gap-2">
+                      {currentBidPlayerId === player.id ? (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/30 bg-amber-300/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-100">
+                          Bidding now
+                        </span>
+                      ) : null}
+
                       {player.isPlaying ? (
                         <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300/35 bg-emerald-300/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-100">
                           Playing...

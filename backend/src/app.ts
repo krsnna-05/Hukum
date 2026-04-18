@@ -1,4 +1,5 @@
 import express, { Express, NextFunction, Request, Response } from "express";
+import cardRoutes from "./routes/cardRoutes";
 import roomRoutes from "./routes/roomRoutes";
 
 const app: Express = express();
@@ -28,6 +29,8 @@ app.get("/", (req: Request, res: Response) => {
   res.json({ message: "Welcome to Hukum API" });
 });
 
+app.use("/api/cards", cardRoutes);
+app.use("/cards", cardRoutes);
 app.use("/api/rooms", roomRoutes);
 
 // Error handling middleware
