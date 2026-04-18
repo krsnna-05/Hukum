@@ -1,13 +1,14 @@
 import { ArrowRight, Hash, LogIn } from "lucide-react";
-import { useState } from "react";
+import { useRoomStore } from "../../store/roomStore";
+import { useUserStore } from "../../store/userStore";
 
-type JoinGameProps = {
-  playerName: string | null;
-};
-
-const JoinGame = ({ playerName }: JoinGameProps) => {
-  const [roomCode, setRoomCode] = useState("");
-  const [isJoined, setIsJoined] = useState(false);
+const JoinGame = () => {
+  const playerName = useUserStore((state) => state.playerName);
+  const roomCode = useRoomStore((state) => state.roomCodeInput);
+  const activeRoomCode = useRoomStore((state) => state.activeRoomCode);
+  const lastAction = useRoomStore((state) => state.lastAction);
+  const setRoomCodeInput = useRoomStore((state) => state.setRoomCodeInput);
+  const joinRoom = useRoomStore((state) => state.joinRoom);
 
   const canJoin = Boolean(playerName && roomCode.trim());
 
@@ -16,7 +17,7 @@ const JoinGame = ({ playerName }: JoinGameProps) => {
       return;
     }
 
-    setIsJoined(true);
+    joinRoom();
   };
 
   return (
@@ -37,9 +38,7 @@ const JoinGame = ({ playerName }: JoinGameProps) => {
           <div className="relative">
             <input
               value={roomCode}
-              onChange={(event) =>
-                setRoomCode(event.target.value.toUpperCase())
-              }
+              onChange={(event) => setRoomCodeInput(event.target.value)}
               placeholder="HUK-7K4D"
               className="h-11 w-full rounded-xl border border-white/12 bg-black/25 px-3 pr-10 text-sm tracking-[0.24em] text-white outline-none placeholder:text-emerald-50/35 focus:border-cyan-300/50"
               maxLength={8}
@@ -65,10 +64,10 @@ const JoinGame = ({ playerName }: JoinGameProps) => {
         </p>
       ) : null}
 
-      {isJoined ? (
+      {lastAction === "joined" && activeRoomCode ? (
         <div className="mt-4 rounded-xl border border-emerald-300/20 bg-emerald-300/10 px-3 py-2 text-sm text-emerald-50">
           Ready to join room{" "}
-          <span className="font-semibold text-white">{roomCode}</span>.
+          <span className="font-semibold text-white">{activeRoomCode}</span>.
         </div>
       ) : null}
     </section>

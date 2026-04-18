@@ -1,27 +1,10 @@
-import { useEffect, useState } from "react";
 import { Sparkles } from "lucide-react";
 import CreateGame from "../components/Home/CreateGame";
 import EnterName from "../components/Home/EnterName";
 import JoinGame from "../components/Home/JoinGame";
 import Navbar from "../components/Navbar";
 
-const STORAGE_KEY = "hukum.playerName";
-
-const readStoredName = () => {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  return window.localStorage.getItem(STORAGE_KEY);
-};
-
 const Home = () => {
-  const [playerName, setPlayerName] = useState<string | null>(null);
-
-  useEffect(() => {
-    setPlayerName(readStoredName());
-  }, []);
-
   return (
     <main className="relative min-h-screen overflow-hidden px-4 py-4 text-stone-100 sm:px-6 lg:px-8">
       <Navbar />
@@ -55,11 +38,11 @@ const Home = () => {
           </p>
         </section>
 
-        <EnterName value={playerName} onPlayerNameChange={setPlayerName} />
+        <EnterName />
 
         <section className="grid gap-4 md:grid-cols-2">
-          <CreateGame hostName={playerName} />
-          <JoinGame playerName={playerName} />
+          <CreateGame />
+          <JoinGame />
         </section>
       </div>
     </main>

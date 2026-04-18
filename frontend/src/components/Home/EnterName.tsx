@@ -1,39 +1,23 @@
 import { PencilLine, Save, Trash2, UserRound } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useUserStore } from "../../store/userStore";
 
-const STORAGE_KEY = "hukum.playerName";
-
-type EnterNameProps = {
-  value: string | null;
-  onPlayerNameChange: (value: string | null) => void;
-  compact?: boolean;
-};
+type EnterNameProps = { compact?: boolean };
 
 const normalizeName = (value: string) => value.trim().replace(/\s+/g, " ");
 
-const EnterName = ({
-  value,
-  onPlayerNameChange,
-  compact = false,
-}: EnterNameProps) => {
+const EnterName = ({ compact = false }: EnterNameProps) => {
+  const playerName = useUserStore((state) => state.playerName);
+  const setPlayerName = useUserStore((state) => state.setPlayerName);
+  const clearPlayerName = useUserStore((state) => state.clearPlayerName);
+
+  const value = playerName;
   const [draftName, setDraftName] = useState(value ?? "");
   const [isEditing, setIsEditing] = useState(!value);
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  useEffect(() => {
-    const storedName = window.localStorage.getItem(STORAGE_KEY);
-
-    if (storedName) {
-      onPlayerNameChange(storedName);
-      setDraftName(storedName);
-      setIsEditing(false);
-    }
-
-    setIsLoaded(true);
-  }, [onPlayerNameChange]);
 
   useEffect(() => {
     setDraftName(value ?? "");
+    setIsEditing(!value);
   }, [value]);
 
   const hasName = Boolean(value);
@@ -53,22 +37,16 @@ const EnterName = ({
       return;
     }
 
-    window.localStorage.setItem(STORAGE_KEY, nextName);
-    onPlayerNameChange(nextName);
+    setPlayerName(nextName);
     setDraftName(nextName);
     setIsEditing(false);
   };
 
   const deleteName = () => {
-    window.localStorage.removeItem(STORAGE_KEY);
-    onPlayerNameChange(null);
+    clearPlayerName();
     setDraftName("");
     setIsEditing(true);
   };
-
-  if (!isLoaded) {
-    return null;
-  }
 
   return (
     <section

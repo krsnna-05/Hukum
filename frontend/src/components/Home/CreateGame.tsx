@@ -1,62 +1,26 @@
 import { ArrowRight, Copy, PlusCircle } from "lucide-react";
 import { useState } from "react";
+import { useRoomStore } from "../../store/roomStore";
+import { useUserStore } from "../../store/userStore";
 
-type CreateGameProps = {
-  hostName: string | null;
-};
-
-const roomCodeSeed = [
-  "A",
-  "B",
-  "C",
-  "D",
-  "E",
-  "F",
-  "G",
-  "H",
-  "J",
-  "K",
-  "M",
-  "N",
-  "P",
-  "R",
-  "T",
-  "U",
-  "V",
-  "X",
-  "Y",
-  "Z",
-  "2",
-  "3",
-  "4",
-  "5",
-  "6",
-  "7",
-  "8",
-  "9",
-];
-
-const buildRoomCode = () => {
-  const code = Array.from(
-    { length: 4 },
-    () => roomCodeSeed[Math.floor(Math.random() * roomCodeSeed.length)],
-  ).join("");
-
-  return `HUK-${code}`;
-};
-
-const CreateGame = ({ hostName }: CreateGameProps) => {
-  const [roomCode, setRoomCode] = useState("HUK-7K4D");
+const CreateGame = () => {
+  const hostName = useUserStore((state) => state.playerName);
+  const roomCode = useRoomStore((state) => state.activeRoomCode);
+  const requestCreateRoom = useRoomStore((state) => state.requestCreateRoom);
   const [isCopied, setIsCopied] = useState(false);
   const canCreate = Boolean(hostName);
 
   const handleCreate = () => {
-    setRoomCode(buildRoomCode());
+    requestCreateRoom();
     setIsCopied(false);
   };
 
   const handleCopy = async () => {
     try {
+      if (!roomCode) {
+        return;
+      }
+
       await window.navigator.clipboard.writeText(roomCode);
       setIsCopied(true);
       window.setTimeout(() => setIsCopied(false), 1400);
@@ -79,7 +43,7 @@ const CreateGame = ({ hostName }: CreateGameProps) => {
         className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-amber-300 px-4 text-sm font-semibold text-slate-950 transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <PlusCircle className="h-4 w-4" />
-        Create Room
+        Request Room
         <ArrowRight className="h-4 w-4" />
       </button>
 
@@ -90,11 +54,12 @@ const CreateGame = ({ hostName }: CreateGameProps) => {
           </p>
           <div className="mt-1 flex items-center justify-between gap-2">
             <p className="text-xl font-bold tracking-[0.12em] text-white">
-              {roomCode}
+              {roomCode ?? "Waiting for server"}
             </p>
             <button
               type="button"
               onClick={handleCopy}
+              disabled={!roomCode}
               className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/12 bg-white/5 px-3 text-xs text-emerald-50 transition hover:bg-white/10"
             >
               <Copy className="h-3.5 w-3.5" />
