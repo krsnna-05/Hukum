@@ -15,6 +15,11 @@ export type RoomPlayer = {
   joinedAt: string;
 };
 
+export type PlayedMove = {
+  playerId: string;
+  card: Card;
+};
+
 export type Room = {
   roomCode: string;
   handlerId: string;
@@ -28,10 +33,14 @@ export type Room = {
   highestBidderId: string | null;
   highestBidValue: number | null;
   trumpSuit: Suit | null;
+  leadSuit: Suit | null;
   playingPlayerId: string | null;
   bidOrder: string[];
   bids: Record<string, number | null>;
   hands: Record<string, Card[]>;
+  currentHand: PlayedMove[];
+  handsWon: Record<string, number>;
+  tricksCompleted: number;
   teamPoints: Record<TeamId, number>;
   players: Record<string, RoomPlayer>;
   teams: Record<TeamId, string[]>;
@@ -67,6 +76,7 @@ export type PublicRoom = {
   highestBidderId: string | null;
   highestBidValue: number | null;
   trumpSuit: Suit | null;
+  leadSuit: Suit | null;
   playingPlayerId: string | null;
   minPlayersToStart: number;
   maxPlayersTotal: number;
@@ -76,5 +86,9 @@ export type PublicRoom = {
   bidOrder: string[];
   bids: Record<string, number | null>;
   hands: Record<string, Card[]>;
+  handCounts: Record<string, number>;
+  currentHand: PlayedMove[];
+  handsWon: Record<string, number>;
+  tricksCompleted: number;
   teams: Record<TeamId, PublicTeam>;
 };

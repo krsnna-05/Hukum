@@ -17,6 +17,11 @@ export const toPublicRoom = (room: Room): PublicRoom => {
   const totalPlayers = Object.keys(room.players).length;
   const bidPlayers = room.teams.bid.length;
   const challengePlayers = room.teams.challenge.length;
+  const safeHands = room.hands ?? {};
+  const safeCurrentHand = room.currentHand ?? [];
+  const safeHandsWon = room.handsWon ?? {};
+  const safeTricksCompleted = room.tricksCompleted ?? 0;
+  const safeLeadSuit = room.leadSuit ?? null;
   const teams = TEAM_IDS.reduce(
     (result, teamId) => {
       const players = room.teams[teamId]
@@ -41,7 +46,7 @@ export const toPublicRoom = (room: Room): PublicRoom => {
     {} as PublicRoom["teams"],
   );
 
-  const hands = Object.entries(room.hands).reduce(
+  const hands = Object.entries(safeHands).reduce(
     (result, [playerId, cards]) => {
       result[playerId] = cards.map((card) => ({
         ...card,
@@ -51,6 +56,14 @@ export const toPublicRoom = (room: Room): PublicRoom => {
       return result;
     },
     {} as PublicRoom["hands"],
+  );
+
+  const handCounts = Object.entries(safeHands).reduce(
+    (result, [playerId, cards]) => {
+      result[playerId] = cards.length;
+      return result;
+    },
+    {} as PublicRoom["handCounts"],
   );
 
   return {
@@ -63,6 +76,7 @@ export const toPublicRoom = (room: Room): PublicRoom => {
     highestBidderId: room.highestBidderId,
     highestBidValue: room.highestBidValue,
     trumpSuit: room.trumpSuit,
+    leadSuit: safeLeadSuit,
     playingPlayerId: room.playingPlayerId,
     minPlayersToStart: MIN_PLAYERS_TO_START,
     maxPlayersTotal: MAX_TOTAL_PLAYERS,
@@ -75,6 +89,10 @@ export const toPublicRoom = (room: Room): PublicRoom => {
     bidOrder: room.bidOrder,
     bids: room.bids,
     hands,
+    handCounts,
+    currentHand: safeCurrentHand,
+    handsWon: safeHandsWon,
+    tricksCompleted: safeTricksCompleted,
     teams,
   };
 };

@@ -4,6 +4,7 @@ import {
   createRoom,
   getRoom,
   joinRoom,
+  playCard,
   placeBid,
   selectTrump,
   setPlayingState,
@@ -246,6 +247,29 @@ router.post("/playing-state", async (req, res) => {
       error instanceof Error ? error.message : "Unable to set playing state.";
     const statusCode = message === "Room not found." ? 404 : 400;
     sendError(res, message, statusCode);
+  }
+});
+
+router.post("/play-card", async (req, res) => {
+  const { roomCode, playerId, cardCode } = req.body as {
+    roomCode?: string;
+    playerId?: string;
+    cardCode?: string;
+  };
+
+  if (!roomCode || !playerId || !cardCode) {
+    sendError(res, "roomCode, playerId, and cardCode are required.");
+    return;
+  }
+
+  try {
+    const result = await playCard(roomCode, playerId, cardCode);
+    emitRoomUpdated(result.room);
+    res.status(200).json(result);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unable to play card.";
+    sendError(res, message, 400);
   }
 });
 

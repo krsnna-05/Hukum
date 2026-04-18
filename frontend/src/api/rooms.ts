@@ -131,3 +131,15 @@ export const setPlayingStateRequest = async (
     isPlaying,
   });
 };
+
+export const playCardRequest = async (
+  roomCode: string,
+  playerId: string,
+  cardCode: string,
+): Promise<ApiResult> => {
+  return request<ApiResult>("/api/rooms/play-card", "POST", {
+    roomCode,
+    playerId,
+    cardCode,
+  });
+};

@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from "react-router";
 import BiddingBoard from "../components/Room/BiddingBoard";
 import LobbyCapacity from "../components/Room/LobbyCapacity";
 import Navbar from "../components/Navbar";
+import PlayingBoard from "../components/Room/PlayingBoard";
 import RoomHeader from "../components/Room/RoomHeader";
 import RoomStartPanel from "../components/Room/RoomStartPanel";
 import RoomReadiness from "../components/Room/RoomReadiness";
@@ -27,6 +28,7 @@ const Room = () => {
   const joinRoom = useRoomStore((state) => state.joinRoom);
   const startGame = useRoomStore((state) => state.startGame);
   const placeBid = useRoomStore((state) => state.placeBid);
+  const playCard = useRoomStore((state) => state.playCard);
   const selectTrump = useRoomStore((state) => state.selectTrump);
   const switchTeam = useRoomStore((state) => state.switchTeam);
   const setActiveRoom = useRoomStore((state) => state.setActiveRoom);
@@ -34,6 +36,8 @@ const Room = () => {
   const status = params.get("status") ?? "lobby";
 
   const normalizedCode = roomCode?.toUpperCase() ?? "";
+  const isLobby = activeRoom?.status === "lobby";
+  const isPlaying = activeRoom?.status === "playing";
 
   useEffect(() => {
     if (!normalizedCode || !playerName) {
@@ -151,9 +155,9 @@ const Room = () => {
             }}
           />
 
-          <RoomReadiness room={activeRoom} />
+          {isLobby ? <RoomReadiness room={activeRoom} /> : null}
 
-          {activeRoom?.status === "lobby" ? (
+          {isLobby ? (
             <RoomStartPanel
               room={activeRoom}
               isHandler={activeRoom.handlerId === userId}
@@ -164,11 +168,11 @@ const Room = () => {
             />
           ) : null}
 
-          <TeamTugOfWar room={activeRoom} />
+          {isLobby ? <TeamTugOfWar room={activeRoom} /> : null}
 
-          <LobbyCapacity room={activeRoom} />
+          {isLobby ? <LobbyCapacity room={activeRoom} /> : null}
 
-          {activeRoom?.status === "lobby" && currentPlayer && otherTeam ? (
+          {isLobby && currentPlayer && otherTeam ? (
             <TeamSwitchPanel
               currentPlayer={currentPlayer}
               otherTeam={otherTeam}
@@ -194,7 +198,22 @@ const Room = () => {
             />
           ) : null}
 
-          <TeamColumns room={activeRoom} />
+          {isPlaying ? (
+            <PlayingBoard
+              room={activeRoom}
+              currentPlayerId={userId}
+              isLoading={isLoading}
+              onPlayCard={(cardCode) => {
+                if (!activeRoom) {
+                  return;
+                }
+
+                void playCard(activeRoom.roomCode, userId, cardCode);
+              }}
+            />
+          ) : null}
+
+          {isLobby ? <TeamColumns room={activeRoom} /> : null}
 
           {error ? <p className="mt-4 text-sm text-rose-200">{error}</p> : null}
         </div>

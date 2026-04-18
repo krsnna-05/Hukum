@@ -1,6 +1,7 @@
 import { PublicRoom, Room, TeamId } from "../../types/room";
 import {
   generateShuffledTrimmedDeck,
+  RANKS,
   type Card,
   type Suit,
 } from "../../game/deck";
@@ -165,6 +166,100 @@ const isTeamBiddingComplete = (room: Room, teamId: TeamId): boolean => {
   );
 };
 
+const createEmptyHandsWon = (order: string[]): Record<string, number> => {
+  return order.reduce(
+    (result, playerId) => {
+      result[playerId] = 0;
+      return result;
+    },
+    {} as Record<string, number>,
+  );
+};
+
+const getNextPlayerInOrder = (order: string[], playerId: string): string | null => {
+  const currentIndex = order.indexOf(playerId);
+
+  if (currentIndex === -1 || order.length === 0) {
+    return null;
+  }
+
+  return order[(currentIndex + 1) % order.length] ?? null;
+};
+
+const hasSuitInHand = (hand: Card[], suit: Suit): boolean => {
+  return hand.some((card) => card.suit === suit);
+};
+
+const rankStrength = (card: Card): number => {
+  return RANKS.length - RANKS.indexOf(card.rank);
+};
+
+const determineTrickWinner = (
+  moves: Array<{ playerId: string; card: Card }>,
+  trumpSuit: Suit,
+  leadSuit: Suit,
+): string => {
+  const trumpMoves = moves.filter((move) => move.card.suit === trumpSuit);
+  const contenderMoves =
+    trumpMoves.length > 0
+      ? trumpMoves
+      : moves.filter((move) => move.card.suit === leadSuit);
+
+  const winningMove = contenderMoves.reduce((best, current) => {
+    return rankStrength(current.card) > rankStrength(best.card) ? current : best;
+  });
+
+  return winningMove.playerId;
+};
+
+const areAllHandsEmpty = (hands: Record<string, Card[]>): boolean => {
+  return Object.values(hands).every((cards) => cards.length === 0);
+};
+
+const applyPlayingRoundResult = (room: Room): void => {
+  const contractBid = room.highestBidValue ?? 0;
+
+  if (!room.highestBidderId || contractBid <= 0) {
+    return;
+  }
+
+  const bidderTeam = room.players[room.highestBidderId]?.team;
+
+  if (!bidderTeam) {
+    return;
+  }
+
+  const opposingTeam = getOpposingTeam(bidderTeam);
+  const bidderTeamHandsWon = room.teams[bidderTeam].reduce(
+    (sum, playerId) => sum + (room.handsWon[playerId] ?? 0),
+    0,
+  );
+  const bidSucceeded = bidderTeamHandsWon >= contractBid;
+  const winningTeam = bidSucceeded ? bidderTeam : opposingTeam;
+  const losingTeam = getOpposingTeam(winningTeam);
+
+  room.teamPoints[winningTeam] += contractBid;
+  room.teamPoints[losingTeam] -= 2 * contractBid;
+};
+
+const resetPostRoundToLobby = (room: Room): void => {
+  room.status = "lobby";
+  room.bidPhase = null;
+  room.currentBidTeamId = null;
+  room.currentBidPlayerId = null;
+  room.highestBidderId = null;
+  room.highestBidValue = null;
+  room.trumpSuit = null;
+  room.leadSuit = null;
+  room.playingPlayerId = null;
+  room.bidOrder = [];
+  room.bids = {};
+  room.hands = {};
+  room.currentHand = [];
+  room.handsWon = {};
+  room.tricksCompleted = 0;
+};
+
 export const createRoom = async (
   playerId: string,
   playerName: string,
@@ -190,10 +285,14 @@ export const createRoom = async (
     highestBidderId: null,
     highestBidValue: null,
     trumpSuit: null,
+    leadSuit: null,
     playingPlayerId: null,
     bidOrder: [],
     bids: {},
     hands: {},
+    currentHand: [],
+    handsWon: {},
+    tricksCompleted: 0,
     teamPoints: {
       bid: 0,
       challenge: 0,
@@ -392,10 +491,14 @@ export const startGame = async (
   room.highestBidderId = null;
   room.highestBidValue = null;
   room.trumpSuit = null;
+  room.leadSuit = null;
   room.playingPlayerId = null;
   room.bidOrder = order;
   room.bids = createEmptyBids(order);
   room.hands = hands;
+  room.currentHand = [];
+  room.handsWon = createEmptyHandsWon(order);
+  room.tricksCompleted = 0;
 
   await saveRoom(room);
 
@@ -506,11 +609,15 @@ export const selectTrump = async (
   }
 
   room.trumpSuit = trumpSuit;
+  room.leadSuit = null;
   room.status = "playing";
   room.bidPhase = null;
   room.currentBidTeamId = null;
   room.currentBidPlayerId = null;
   room.playingPlayerId = room.highestBidderId;
+  room.currentHand = [];
+  room.handsWon = createEmptyHandsWon(room.bidOrder);
+  room.tricksCompleted = 0;
 
   await saveRoom(room);
 
@@ -546,6 +653,109 @@ export const setPlayingState = async (
     room.playingPlayerId = normalizedPlayerId;
   } else if (room.playingPlayerId === normalizedPlayerId) {
     room.playingPlayerId = null;
+  }
+
+  await saveRoom(room);
+
+  return {
+    room: toPublicRoom(room),
+    assignedTeam: player.team,
+  };
+};
+
+export const playCard = async (
+  roomCode: string,
+  playerId: string,
+  cardCode: string,
+): Promise<RoomActionResult> => {
+  if (!playerId.trim()) {
+    throw new Error("Player id is required.");
+  }
+
+  if (!cardCode.trim()) {
+    throw new Error("cardCode is required.");
+  }
+
+  const room = await getRoomByCode(roomCode);
+
+  if (!room) {
+    throw new Error("Room not found.");
+  }
+
+  if (room.status !== "playing") {
+    throw new Error("Playing phase is not active.");
+  }
+
+  if (!room.trumpSuit) {
+    throw new Error("Trump suit is not selected.");
+  }
+
+  const normalizedPlayerId = playerId.trim();
+  const player = room.players[normalizedPlayerId];
+
+  if (!player) {
+    throw new Error("Player is not part of this room.");
+  }
+
+  if (room.playingPlayerId !== normalizedPlayerId) {
+    throw new Error("It is not your turn.");
+  }
+
+  const playerHand = room.hands[normalizedPlayerId] ?? [];
+  const handCardIndex = playerHand.findIndex((card) => card.code === cardCode);
+
+  if (handCardIndex < 0) {
+    throw new Error("Card is not in your hand.");
+  }
+
+  const selectedCard = playerHand[handCardIndex];
+  const leadSuit = room.leadSuit;
+
+  if (leadSuit && selectedCard.suit !== leadSuit && hasSuitInHand(playerHand, leadSuit)) {
+    throw new Error("You must follow the lead suit.");
+  }
+
+  playerHand.splice(handCardIndex, 1);
+  room.hands[normalizedPlayerId] = playerHand;
+  room.currentHand.push({ playerId: normalizedPlayerId, card: selectedCard });
+
+  if (!room.leadSuit) {
+    room.leadSuit = selectedCard.suit;
+  }
+
+  const totalPlayers = room.bidOrder.length;
+
+  if (room.currentHand.length < totalPlayers) {
+    const nextPlayer = getNextPlayerInOrder(room.bidOrder, normalizedPlayerId);
+
+    if (!nextPlayer) {
+      throw new Error("Unable to find next player turn.");
+    }
+
+    room.playingPlayerId = nextPlayer;
+  } else {
+    const trickLeadSuit = room.leadSuit;
+
+    if (!trickLeadSuit) {
+      throw new Error("Lead suit is missing for completed trick.");
+    }
+
+    const winnerPlayerId = determineTrickWinner(
+      room.currentHand,
+      room.trumpSuit,
+      trickLeadSuit,
+    );
+
+    room.handsWon[winnerPlayerId] = (room.handsWon[winnerPlayerId] ?? 0) + 1;
+    room.tricksCompleted += 1;
+    room.currentHand = [];
+    room.leadSuit = null;
+    room.playingPlayerId = winnerPlayerId;
+
+    if (areAllHandsEmpty(room.hands)) {
+      applyPlayingRoundResult(room);
+      resetPostRoundToLobby(room);
+    }
   }
 
   await saveRoom(room);

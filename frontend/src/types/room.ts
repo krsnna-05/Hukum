@@ -17,6 +17,11 @@ export type Card = {
   svgPath: string;
 };
 
+export type PlayedMove = {
+  playerId: string;
+  card: Card;
+};
+
 export type RoomPlayer = {
   id: string;
   name: string;
@@ -44,6 +49,7 @@ export type Room = {
   highestBidderId: string | null;
   highestBidValue: number | null;
   trumpSuit: Suit | null;
+  leadSuit: Suit | null;
   playingPlayerId: string | null;
   minPlayersToStart: number;
   maxPlayersTotal: number;
@@ -53,5 +59,9 @@ export type Room = {
   bidOrder: string[];
   bids: Record<string, number | null>;
   hands: Record<string, Card[]>;
+  handCounts: Record<string, number>;
+  currentHand: PlayedMove[];
+  handsWon: Record<string, number>;
+  tricksCompleted: number;
   teams: Record<TeamId, RoomTeam>;
 };

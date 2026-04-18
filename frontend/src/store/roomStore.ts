@@ -4,6 +4,7 @@ import {
   createRoomRequest,
   getRoomRequest,
   joinRoomRequest,
+  playCardRequest,
   placeBidRequest,
   selectTrumpRequest,
   setPlayingStateRequest,
@@ -51,6 +52,7 @@ type RoomState = {
     playerId: string,
     isPlaying: boolean,
   ) => Promise<void>;
+  playCard: (roomCode: string, playerId: string, cardCode: string) => Promise<void>;
   clearError: () => void;
   resetRoom: () => void;
   setActiveRoom: (room: Room) => void;
@@ -276,6 +278,24 @@ export const useRoomStore = create<RoomState>()((set, get) => ({
         error instanceof Error
           ? error.message
           : "Unable to update playing state.";
+      set({ isLoading: false, error: message });
+    }
+  },
+
+  playCard: async (roomCode, playerId, cardCode) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const { room } = await playCardRequest(roomCode, playerId, cardCode);
+      set({
+        activeRoom: room,
+        isLoading: false,
+        error: null,
+        lastAction: "switched",
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unable to play card.";
       set({ isLoading: false, error: message });
     }
   },
