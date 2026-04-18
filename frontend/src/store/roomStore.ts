@@ -24,7 +24,11 @@ type RoomState = {
     roomCode?: string,
   ) => Promise<string | null>;
   fetchRoom: (roomCode: string) => Promise<void>;
-  switchTeam: (roomCode: string, playerId: string, toTeam?: TeamId) => Promise<void>;
+  switchTeam: (
+    roomCode: string,
+    playerId: string,
+    toTeam?: TeamId,
+  ) => Promise<void>;
   clearError: () => void;
   resetRoom: () => void;
 };
@@ -43,9 +47,14 @@ export const useRoomStore = create<RoomState>()((set, get) => ({
   ...initialRoomState,
 
   setRoomCodeInput: (value) =>
-    set({ roomCodeInput: normalizeRoomCode(value), error: null, lastAction: null }),
+    set({
+      roomCodeInput: normalizeRoomCode(value),
+      error: null,
+      lastAction: null,
+    }),
 
-  clearRoomCodeInput: () => set({ roomCodeInput: "", error: null, lastAction: null }),
+  clearRoomCodeInput: () =>
+    set({ roomCodeInput: "", error: null, lastAction: null }),
 
   createRoom: async (playerId, playerName) => {
     if (!playerName.trim()) {
@@ -65,7 +74,8 @@ export const useRoomStore = create<RoomState>()((set, get) => ({
       });
       return room.roomCode;
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unable to create room.";
+      const message =
+        error instanceof Error ? error.message : "Unable to create room.";
       set({ isLoading: false, error: message });
       return null;
     }
@@ -96,7 +106,8 @@ export const useRoomStore = create<RoomState>()((set, get) => ({
       });
       return room.roomCode;
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unable to join room.";
+      const message =
+        error instanceof Error ? error.message : "Unable to join room.";
       set({ isLoading: false, error: message });
       return null;
     }
@@ -117,7 +128,8 @@ export const useRoomStore = create<RoomState>()((set, get) => ({
         error: null,
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unable to fetch room.";
+      const message =
+        error instanceof Error ? error.message : "Unable to fetch room.";
       set({ error: message });
     }
   },
@@ -134,7 +146,8 @@ export const useRoomStore = create<RoomState>()((set, get) => ({
         lastAction: "switched",
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unable to switch team.";
+      const message =
+        error instanceof Error ? error.message : "Unable to switch team.";
       set({ isLoading: false, error: message });
     }
   },

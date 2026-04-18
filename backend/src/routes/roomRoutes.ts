@@ -4,7 +4,7 @@ import {
   getRoom,
   joinRoom,
   switchPlayerTeam,
-} from "../services/roomService";
+} from "../services/rooms/roomService";
 import { TeamId } from "../types/room";
 
 const router = Router();
@@ -28,7 +28,8 @@ router.post("/create", async (req, res) => {
     const result = await createRoom(playerId, playerName);
     res.status(201).json(result);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unable to create room.";
+    const message =
+      error instanceof Error ? error.message : "Unable to create room.";
     sendError(res, message);
   }
 });
@@ -49,7 +50,8 @@ router.post("/join", async (req, res) => {
     const result = await joinRoom(roomCode, playerId, playerName);
     res.status(200).json(result);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unable to join room.";
+    const message =
+      error instanceof Error ? error.message : "Unable to join room.";
     const statusCode = message === "Room not found." ? 404 : 400;
     sendError(res, message, statusCode);
   }
@@ -62,7 +64,8 @@ router.get("/:roomCode", async (req, res) => {
     const room = await getRoom(roomCode);
     res.status(200).json({ room });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unable to fetch room.";
+    const message =
+      error instanceof Error ? error.message : "Unable to fetch room.";
     const statusCode = message === "Room not found." ? 404 : 400;
     sendError(res, message, statusCode);
   }
@@ -80,8 +83,8 @@ router.post("/switch-team", async (req, res) => {
     return;
   }
 
-  if (toTeam && toTeam !== "guerrilla" && toTeam !== "police") {
-    sendError(res, "toTeam must be either guerrilla or police.");
+  if (toTeam && toTeam !== "bid" && toTeam !== "challenge") {
+    sendError(res, "toTeam must be either bid or challenge.");
     return;
   }
 
@@ -89,7 +92,8 @@ router.post("/switch-team", async (req, res) => {
     const result = await switchPlayerTeam(roomCode, playerId, toTeam);
     res.status(200).json(result);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unable to switch team.";
+    const message =
+      error instanceof Error ? error.message : "Unable to switch team.";
     const statusCode = message === "Room not found." ? 404 : 400;
     sendError(res, message, statusCode);
   }

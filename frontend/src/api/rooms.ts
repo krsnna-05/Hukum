@@ -58,7 +58,10 @@ export const joinRoomRequest = async (
 };
 
 export const getRoomRequest = async (roomCode: string): Promise<ApiResult> => {
-  return request<ApiResult>(`/api/rooms/${encodeURIComponent(roomCode)}`, "GET");
+  return request<ApiResult>(
+    `/api/rooms/${encodeURIComponent(roomCode)}`,
+    "GET",
+  );
 };
 
 export const switchTeamRequest = async (

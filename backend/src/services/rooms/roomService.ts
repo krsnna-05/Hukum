@@ -1,22 +1,12 @@
-import { redisClient } from "../config/redis";
-import { PublicRoom, Room, TEAM_IDS, TeamId } from "../types/room";
-
-const ROOM_PREFIX = "room:";
-const MAX_PLAYERS_PER_TEAM = 4;
-const ROOM_CODE_LENGTH = 4;
-const TEAM_NAMES: Record<TeamId, string> = {
-  guerrilla: "Guerrilla",
-  police: "Police",
-};
-
-type RoomActionResult = {
-  room: PublicRoom;
-  assignedTeam: TeamId;
-};
-
-const buildRoomKey = (roomCode: string) => `${ROOM_PREFIX}${roomCode}`;
-
-const normalizeCode = (value: string) => value.trim().toUpperCase();
+import { PublicRoom, Room, TeamId } from "../../types/room";
+import {
+  MAX_PLAYERS_PER_TEAM,
+  ROOM_CODE_LENGTH,
+  RoomActionResult,
+  TEAM_NAMES,
+} from "./constants";
+import { toPublicRoom } from "./mapper";
+import { getRoomByCode, roomExists, saveRoom } from "./repository";
 
 const ensurePlayerInput = (playerId: string, playerName: string) => {
   if (!playerId.trim()) {
@@ -42,7 +32,7 @@ const createRandomSuffix = (): string => {
 const generateRoomCode = async (): Promise<string> => {
   for (let attempt = 0; attempt < 12; attempt += 1) {
     const roomCode = `HUK-${createRandomSuffix()}`;
-    const exists = await redisClient.exists(buildRoomKey(roomCode));
+    const exists = await roomExists(roomCode);
 
     if (!exists) {
       return roomCode;
@@ -53,15 +43,13 @@ const generateRoomCode = async (): Promise<string> => {
 };
 
 const pickTeamWithSpace = (room: Room): TeamId | null => {
-  const [guerrillaCount, policeCount] = [
-    room.teams.guerrilla.length,
-    room.teams.police.length,
+  const [bidCount, challengeCount] = [
+    room.teams.bid.length,
+    room.teams.challenge.length,
   ];
 
   const sorted: TeamId[] =
-    guerrillaCount <= policeCount
-      ? ["guerrilla", "police"]
-      : ["police", "guerrilla"];
+    bidCount <= challengeCount ? ["bid", "challenge"] : ["challenge", "bid"];
 
   for (const teamId of sorted) {
     if (room.teams[teamId].length < room.maxPlayersPerTeam) {
@@ -70,51 +58,6 @@ const pickTeamWithSpace = (room: Room): TeamId | null => {
   }
 
   return null;
-};
-
-const persistRoom = async (room: Room): Promise<void> => {
-  room.updatedAt = new Date().toISOString();
-  await redisClient.set(buildRoomKey(room.roomCode), JSON.stringify(room));
-};
-
-const readRoom = async (roomCode: string): Promise<Room | null> => {
-  const payload = await redisClient.get(buildRoomKey(normalizeCode(roomCode)));
-
-  if (!payload) {
-    return null;
-  }
-
-  return JSON.parse(payload) as Room;
-};
-
-const toPublicRoom = (room: Room): PublicRoom => {
-  const teams = TEAM_IDS.reduce((result, teamId) => {
-    const players = room.teams[teamId]
-      .map((playerId) => room.players[playerId])
-      .filter(Boolean)
-      .map((player) => ({
-        ...player,
-        isHandler: player.id === room.handlerId,
-      }));
-
-    result[teamId] = {
-      id: teamId,
-      name: TEAM_NAMES[teamId],
-      capacity: room.maxPlayersPerTeam,
-      players,
-    };
-
-    return result;
-  }, {} as PublicRoom["teams"]);
-
-  return {
-    roomCode: room.roomCode,
-    handlerId: room.handlerId,
-    status: room.status,
-    maxPlayersPerTeam: room.maxPlayersPerTeam,
-    totalPlayers: Object.keys(room.players).length,
-    teams,
-  };
 };
 
 export const createRoom = async (
@@ -126,32 +69,35 @@ export const createRoom = async (
   const roomCode = await generateRoomCode();
   const now = new Date().toISOString();
 
+  const normalizedPlayerId = playerId.trim();
+  const normalizedPlayerName = playerName.trim();
+
   const room: Room = {
     roomCode,
-    handlerId: playerId.trim(),
+    handlerId: normalizedPlayerId,
     status: "lobby",
     maxPlayersPerTeam: MAX_PLAYERS_PER_TEAM,
     createdAt: now,
     updatedAt: now,
     players: {
-      [playerId.trim()]: {
-        id: playerId.trim(),
-        name: playerName.trim(),
-        team: "guerrilla",
+      [normalizedPlayerId]: {
+        id: normalizedPlayerId,
+        name: normalizedPlayerName,
+        team: "bid",
         joinedAt: now,
       },
     },
     teams: {
-      guerrilla: [playerId.trim()],
-      police: [],
+      bid: [normalizedPlayerId],
+      challenge: [],
     },
   };
 
-  await persistRoom(room);
+  await saveRoom(room);
 
   return {
     room: toPublicRoom(room),
-    assignedTeam: "guerrilla",
+    assignedTeam: "bid",
   };
 };
 
@@ -162,7 +108,7 @@ export const joinRoom = async (
 ): Promise<RoomActionResult> => {
   ensurePlayerInput(playerId, playerName);
 
-  const room = await readRoom(roomCode);
+  const room = await getRoomByCode(roomCode);
 
   if (!room) {
     throw new Error("Room not found.");
@@ -174,7 +120,7 @@ export const joinRoom = async (
 
   if (existingPlayer) {
     existingPlayer.name = normalizedPlayerName;
-    await persistRoom(room);
+    await saveRoom(room);
 
     return {
       room: toPublicRoom(room),
@@ -196,7 +142,7 @@ export const joinRoom = async (
   };
   room.teams[assignedTeam].push(normalizedPlayerId);
 
-  await persistRoom(room);
+  await saveRoom(room);
 
   return {
     room: toPublicRoom(room),
@@ -205,7 +151,7 @@ export const joinRoom = async (
 };
 
 export const getRoom = async (roomCode: string): Promise<PublicRoom> => {
-  const room = await readRoom(roomCode);
+  const room = await getRoomByCode(roomCode);
 
   if (!room) {
     throw new Error("Room not found.");
@@ -223,7 +169,7 @@ export const switchPlayerTeam = async (
     throw new Error("Player id is required.");
   }
 
-  const room = await readRoom(roomCode);
+  const room = await getRoomByCode(roomCode);
 
   if (!room) {
     throw new Error("Room not found.");
@@ -235,7 +181,8 @@ export const switchPlayerTeam = async (
     throw new Error("Player is not part of this room.");
   }
 
-  const nextTeam: TeamId = toTeam ?? (player.team === "guerrilla" ? "police" : "guerrilla");
+  const nextTeam: TeamId =
+    toTeam ?? (player.team === "bid" ? "challenge" : "bid");
 
   if (nextTeam === player.team) {
     return {
@@ -245,14 +192,16 @@ export const switchPlayerTeam = async (
   }
 
   if (room.teams[nextTeam].length >= room.maxPlayersPerTeam) {
-    throw new Error(`${TEAM_NAMES[nextTeam]} team is already full.`);
+    throw new Error(`${TEAM_NAMES[nextTeam]} is already full.`);
   }
 
-  room.teams[player.team] = room.teams[player.team].filter((id) => id !== player.id);
+  room.teams[player.team] = room.teams[player.team].filter(
+    (id) => id !== player.id,
+  );
   room.teams[nextTeam].push(player.id);
   player.team = nextTeam;
 
-  await persistRoom(room);
+  await saveRoom(room);
 
   return {
     room: toPublicRoom(room),

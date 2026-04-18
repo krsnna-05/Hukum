@@ -1,4 +1,4 @@
-export const TEAM_IDS = ["guerrilla", "police"] as const;
+export const TEAM_IDS = ["bid", "challenge"] as const;
 
 export type TeamId = (typeof TEAM_IDS)[number];
 

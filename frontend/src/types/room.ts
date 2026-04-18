@@ -1,4 +1,4 @@
-export type TeamId = "guerrilla" | "police";
+export type TeamId = "bid" | "challenge";
 
 export type RoomStatus = "lobby";
 
