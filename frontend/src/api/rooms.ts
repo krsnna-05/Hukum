@@ -75,3 +75,15 @@ export const switchTeamRequest = async (
     toTeam,
   });
 };
+
+export const applyRoundResultRequest = async (
+  roomCode: string,
+  winningTeam: TeamId,
+  bid: number,
+): Promise<ApiResult> => {
+  return request<ApiResult>("/api/rooms/round-result", "POST", {
+    roomCode,
+    winningTeam,
+    bid,
+  });
+};

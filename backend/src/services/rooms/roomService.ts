@@ -60,6 +60,9 @@ const pickTeamWithSpace = (room: Room): TeamId | null => {
   return null;
 };
 
+const getOpposingTeam = (teamId: TeamId): TeamId =>
+  teamId === "bid" ? "challenge" : "bid";
+
 export const createRoom = async (
   playerId: string,
   playerName: string,
@@ -79,6 +82,10 @@ export const createRoom = async (
     maxPlayersPerTeam: MAX_PLAYERS_PER_TEAM,
     createdAt: now,
     updatedAt: now,
+    teamPoints: {
+      bid: 0,
+      challenge: 0,
+    },
     players: {
       [normalizedPlayerId]: {
         id: normalizedPlayerId,
@@ -206,5 +213,33 @@ export const switchPlayerTeam = async (
   return {
     room: toPublicRoom(room),
     assignedTeam: nextTeam,
+  };
+};
+
+export const applyRoundResult = async (
+  roomCode: string,
+  winningTeam: TeamId,
+  bid: number,
+): Promise<RoomActionResult> => {
+  if (!Number.isInteger(bid) || bid <= 0) {
+    throw new Error("Bid must be a positive whole number.");
+  }
+
+  const room = await getRoomByCode(roomCode);
+
+  if (!room) {
+    throw new Error("Room not found.");
+  }
+
+  const losingTeam = getOpposingTeam(winningTeam);
+
+  room.teamPoints[winningTeam] += bid;
+  room.teamPoints[losingTeam] -= 2 * bid;
+
+  await saveRoom(room);
+
+  return {
+    room: toPublicRoom(room),
+    assignedTeam: winningTeam,
   };
 };

@@ -18,6 +18,7 @@ export type Room = {
   maxPlayersPerTeam: number;
   createdAt: string;
   updatedAt: string;
+  teamPoints: Record<TeamId, number>;
   players: Record<string, RoomPlayer>;
   teams: Record<TeamId, string[]>;
 };
@@ -26,6 +27,7 @@ export type PublicTeam = {
   id: TeamId;
   name: string;
   capacity: number;
+  points: number;
   players: Array<RoomPlayer & { isHandler: boolean }>;
 };
 

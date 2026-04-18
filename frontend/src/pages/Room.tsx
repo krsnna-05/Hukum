@@ -4,6 +4,7 @@ import LobbyCapacity from "../components/Room/LobbyCapacity";
 import Navbar from "../components/Navbar";
 import RoomHeader from "../components/Room/RoomHeader";
 import RoomReadiness from "../components/Room/RoomReadiness";
+import TeamTugOfWar from "../components/Room/TeamTugOfWar";
 import TeamColumns from "../components/Room/TeamColumns";
 import TeamSwitchPanel from "../components/Room/TeamSwitchPanel";
 import { useRoomStore } from "../store/roomStore";
@@ -53,8 +54,8 @@ const Room = () => {
     }
 
     const players = [
-      ...activeRoom.teams.bid.players,
-      ...activeRoom.teams.challenge.players,
+      ...(activeRoom.teams?.bid?.players ?? []),
+      ...(activeRoom.teams?.challenge?.players ?? []),
     ];
 
     return players.find((player) => player.id === userId) ?? null;
@@ -120,6 +121,8 @@ const Room = () => {
           />
 
           <RoomReadiness room={activeRoom} />
+
+          <TeamTugOfWar room={activeRoom} />
 
           <LobbyCapacity room={activeRoom} />
 

@@ -23,6 +23,7 @@ export const toPublicRoom = (room: Room): PublicRoom => {
         id: teamId,
         name: TEAM_NAMES[teamId],
         capacity: room.maxPlayersPerTeam,
+        points: room.teamPoints[teamId],
         players,
       };
 

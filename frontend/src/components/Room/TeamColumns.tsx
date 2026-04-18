@@ -12,8 +12,8 @@ const TeamColumns = ({ room }: TeamColumnsProps) => {
   const canStart = room?.canStartGame ?? false;
   const isEven = currentPlayers % 2 === 0;
   const teamsBalanced =
-    (room?.teams.bid.players.length ?? 0) ===
-    (room?.teams.challenge.players.length ?? 0);
+    (room?.teams?.bid?.players.length ?? 0) ===
+    (room?.teams?.challenge?.players.length ?? 0);
 
   const readinessLabel = canStart
     ? "Ready to start"
@@ -42,30 +42,33 @@ const TeamColumns = ({ room }: TeamColumnsProps) => {
 
       <div className="grid gap-4 md:grid-cols-2">
         {TEAM_ORDER.map((teamId) => {
-          const team = room?.teams[teamId];
+          const team = room?.teams?.[teamId];
 
           return (
             <article
               key={teamId}
               className="rounded-2xl border border-white/10 bg-black/25 p-4"
             >
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="text-xl font-semibold text-white">
                   {team?.name ?? teamId}
                 </h2>
-                <span className="text-xs uppercase tracking-[0.16em] text-emerald-50/60">
-                  {team?.players.length ?? 0}/4
-                </span>
+                <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.16em] text-emerald-50/60">
+                  <span>{team?.players.length ?? 0}/4 players</span>
+                  <span className="rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-semibold tracking-[0.18em] text-white">
+                    {team?.points ?? 0} pts
+                  </span>
+                </div>
               </div>
 
               <ul className="mt-3 space-y-2">
                 {(team?.players ?? []).map((player) => (
                   <li
                     key={player.id}
-                    className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3 py-2"
+                    className="flex flex-col gap-2 rounded-xl border border-white/10 bg-black/30 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <span className="text-sm text-white">{player.name}</span>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       {player.isHandler ? (
                         <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/30 bg-amber-300/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-100">
                           <Crown className="h-3 w-3" />

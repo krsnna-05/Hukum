@@ -14,6 +14,7 @@ export type RoomTeam = {
   id: TeamId;
   name: string;
   capacity: number;
+  points: number;
   players: RoomPlayer[];
 };
 

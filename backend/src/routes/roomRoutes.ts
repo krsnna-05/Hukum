@@ -1,5 +1,6 @@
 import { Response, Router } from "express";
 import {
+  applyRoundResult,
   createRoom,
   getRoom,
   joinRoom,
@@ -94,6 +95,34 @@ router.post("/switch-team", async (req, res) => {
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unable to switch team.";
+    const statusCode = message === "Room not found." ? 404 : 400;
+    sendError(res, message, statusCode);
+  }
+});
+
+router.post("/round-result", async (req, res) => {
+  const { roomCode, winningTeam, bid } = req.body as {
+    roomCode?: string;
+    winningTeam?: TeamId;
+    bid?: number;
+  };
+
+  if (!roomCode || !winningTeam || typeof bid !== "number") {
+    sendError(res, "roomCode, winningTeam, and bid are required.");
+    return;
+  }
+
+  if (winningTeam !== "bid" && winningTeam !== "challenge") {
+    sendError(res, "winningTeam must be either bid or challenge.");
+    return;
+  }
+
+  try {
+    const result = await applyRoundResult(roomCode, winningTeam, bid);
+    res.status(200).json(result);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unable to apply round result.";
     const statusCode = message === "Room not found." ? 404 : 400;
     sendError(res, message, statusCode);
   }

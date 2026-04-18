@@ -11,8 +11,8 @@ const RoomReadiness = ({ room }: RoomReadinessProps) => {
   const canStart = room?.canStartGame ?? false;
   const isEven = currentPlayers % 2 === 0;
   const teamsBalanced =
-    (room?.teams.bid.players.length ?? 0) ===
-    (room?.teams.challenge.players.length ?? 0);
+    (room?.teams?.bid?.players.length ?? 0) ===
+    (room?.teams?.challenge?.players.length ?? 0);
 
   return (
     <div
@@ -23,17 +23,17 @@ const RoomReadiness = ({ room }: RoomReadinessProps) => {
           : "border-amber-300/20 bg-amber-300/10",
       ].join(" ")}
     >
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-emerald-50/60">
             Match readiness
           </p>
-          <h2 className="mt-1 text-lg font-semibold text-white">
+          <h2 className="mt-1 text-base font-semibold text-white sm:text-lg">
             {canStart ? "Room ready to start" : "Waiting for more players"}
           </h2>
         </div>
 
-        <div className="text-right text-sm text-emerald-50/80">
+        <div className="text-left text-sm text-emerald-50/80 sm:text-right">
           <p>
             {currentPlayers}/{maxPlayers} players
           </p>

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import {
+  applyRoundResultRequest,
   createRoomRequest,
   getRoomRequest,
   joinRoomRequest,
@@ -28,6 +29,11 @@ type RoomState = {
     roomCode: string,
     playerId: string,
     toTeam?: TeamId,
+  ) => Promise<void>;
+  applyRoundResult: (
+    roomCode: string,
+    winningTeam: TeamId,
+    bid: number,
   ) => Promise<void>;
   clearError: () => void;
   resetRoom: () => void;
@@ -148,6 +154,30 @@ export const useRoomStore = create<RoomState>()((set, get) => ({
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Unable to switch team.";
+      set({ isLoading: false, error: message });
+    }
+  },
+
+  applyRoundResult: async (roomCode, winningTeam, bid) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const { room } = await applyRoundResultRequest(
+        roomCode,
+        winningTeam,
+        bid,
+      );
+      set({
+        activeRoom: room,
+        isLoading: false,
+        error: null,
+        lastAction: "switched",
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to apply round result.";
       set({ isLoading: false, error: message });
     }
   },
