@@ -176,7 +176,10 @@ const createEmptyHandsWon = (order: string[]): Record<string, number> => {
   );
 };
 
-const getNextPlayerInOrder = (order: string[], playerId: string): string | null => {
+const getNextPlayerInOrder = (
+  order: string[],
+  playerId: string,
+): string | null => {
   const currentIndex = order.indexOf(playerId);
 
   if (currentIndex === -1 || order.length === 0) {
@@ -206,7 +209,9 @@ const determineTrickWinner = (
       : moves.filter((move) => move.card.suit === leadSuit);
 
   const winningMove = contenderMoves.reduce((best, current) => {
-    return rankStrength(current.card) > rankStrength(best.card) ? current : best;
+    return rankStrength(current.card) > rankStrength(best.card)
+      ? current
+      : best;
   });
 
   return winningMove.playerId;
@@ -711,7 +716,11 @@ export const playCard = async (
   const selectedCard = playerHand[handCardIndex];
   const leadSuit = room.leadSuit;
 
-  if (leadSuit && selectedCard.suit !== leadSuit && hasSuitInHand(playerHand, leadSuit)) {
+  if (
+    leadSuit &&
+    selectedCard.suit !== leadSuit &&
+    hasSuitInHand(playerHand, leadSuit)
+  ) {
     throw new Error("You must follow the lead suit.");
   }
 

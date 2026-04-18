@@ -52,7 +52,11 @@ type RoomState = {
     playerId: string,
     isPlaying: boolean,
   ) => Promise<void>;
-  playCard: (roomCode: string, playerId: string, cardCode: string) => Promise<void>;
+  playCard: (
+    roomCode: string,
+    playerId: string,
+    cardCode: string,
+  ) => Promise<void>;
   clearError: () => void;
   resetRoom: () => void;
   setActiveRoom: (room: Room) => void;

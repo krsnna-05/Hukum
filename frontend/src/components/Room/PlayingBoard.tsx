@@ -10,7 +10,10 @@ type PlayingBoardProps = {
   onPlayCard: (cardCode: string) => void;
 };
 
-const SUIT_META: Record<Suit, { label: string; symbol: string; accent: string }> = {
+const SUIT_META: Record<
+  Suit,
+  { label: string; symbol: string; accent: string }
+> = {
   spades: { label: "Spades", symbol: "S", accent: "text-slate-100" },
   hearts: { label: "Hearts", symbol: "H", accent: "text-rose-200" },
   diamonds: { label: "Diamonds", symbol: "D", accent: "text-cyan-200" },
@@ -44,11 +47,17 @@ const SuitBadge = ({
         </span>
         <div>
           <p className="flex items-center gap-1.5 text-sm font-semibold text-white">
-            {icon === "lead" ? <Flag className="h-3.5 w-3.5" /> : <Swords className="h-3.5 w-3.5" />}
+            {icon === "lead" ? (
+              <Flag className="h-3.5 w-3.5" />
+            ) : (
+              <Swords className="h-3.5 w-3.5" />
+            )}
             {meta?.label ?? "Not set yet"}
           </p>
           <p className="text-[11px] text-emerald-50/60">
-            {meta ? `${meta.label} is active` : "Waiting for first card of this trick"}
+            {meta
+              ? `${meta.label} is active`
+              : "Waiting for first card of this trick"}
           </p>
         </div>
       </div>
@@ -72,21 +81,23 @@ const PlayingBoard = ({
 
   const yourHand = room?.hands?.[currentPlayerId] ?? [];
   const currentTurnPlayerId = room?.playingPlayerId ?? null;
-  const isYourTurn = room?.status === "playing" && currentTurnPlayerId === currentPlayerId;
+  const isYourTurn =
+    room?.status === "playing" && currentTurnPlayerId === currentPlayerId;
   const allPlayers = room?.bidOrder ?? [];
 
   const teamStats = useMemo(() => {
     const highestBidderId = room?.highestBidderId;
     const contract = room?.highestBidValue ?? 0;
 
-    const bidderTeam =
-      (room?.teams?.bid?.players ?? []).some((player) => player.id === highestBidderId)
-        ? ("bid" as TeamId)
-        : (room?.teams?.challenge?.players ?? []).some(
-              (player) => player.id === highestBidderId,
-            )
-          ? ("challenge" as TeamId)
-          : null;
+    const bidderTeam = (room?.teams?.bid?.players ?? []).some(
+      (player) => player.id === highestBidderId,
+    )
+      ? ("bid" as TeamId)
+      : (room?.teams?.challenge?.players ?? []).some(
+            (player) => player.id === highestBidderId,
+          )
+        ? ("challenge" as TeamId)
+        : null;
 
     if (!room || !bidderTeam || contract <= 0) {
       return null;
@@ -133,31 +144,50 @@ const PlayingBoard = ({
           Play cards in turn and win tricks
         </h2>
         <p className="mt-2 text-sm text-emerald-50/70">
-          Current turn: {currentTurnPlayerId ? playerLookup.get(currentTurnPlayerId)?.name ?? "Unknown" : "Waiting"}
+          Current turn:{" "}
+          {currentTurnPlayerId
+            ? (playerLookup.get(currentTurnPlayerId)?.name ?? "Unknown")
+            : "Waiting"}
         </p>
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <SuitBadge title="Lead suit" suit={room?.leadSuit ?? null} icon="lead" />
-        <SuitBadge title="Trump suit" suit={room?.trumpSuit ?? null} icon="trump" />
+        <SuitBadge
+          title="Lead suit"
+          suit={room?.leadSuit ?? null}
+          icon="lead"
+        />
+        <SuitBadge
+          title="Trump suit"
+          suit={room?.trumpSuit ?? null}
+          icon="trump"
+        />
       </div>
 
       {teamStats ? (
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <div className="rounded-xl border border-amber-300/30 bg-amber-300/10 p-3">
             <p className="text-[11px] uppercase tracking-[0.16em] text-amber-100/80">
-              Attackers ({room?.teams?.[teamStats.bidderTeam]?.name ?? teamStats.bidderTeam})
+              Attackers (
+              {room?.teams?.[teamStats.bidderTeam]?.name ??
+                teamStats.bidderTeam}
+              )
             </p>
             <p className="mt-1 text-sm font-semibold text-white">
-              {teamStats.attackersWon}/{teamStats.contract} hands required to win
+              {teamStats.attackersWon}/{teamStats.contract} hands required to
+              win
             </p>
           </div>
           <div className="rounded-xl border border-cyan-300/30 bg-cyan-300/10 p-3">
             <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-100/80">
-              Defenders ({room?.teams?.[teamStats.defenderTeam]?.name ?? teamStats.defenderTeam})
+              Defenders (
+              {room?.teams?.[teamStats.defenderTeam]?.name ??
+                teamStats.defenderTeam}
+              )
             </p>
             <p className="mt-1 text-sm font-semibold text-white">
-              {teamStats.defendersWon}/{teamStats.defendersRequired} hands required to defend
+              {teamStats.defendersWon}/{teamStats.defendersRequired} hands
+              required to defend
             </p>
             <p className="mt-0.5 text-[11px] text-cyan-100/75">
               Out of {teamStats.totalTricksInRound} total tricks this round
@@ -192,7 +222,9 @@ const PlayingBoard = ({
           ))}
 
           {(room?.currentHand?.length ?? 0) === 0 ? (
-            <p className="text-sm text-emerald-50/65">No cards played yet in this trick.</p>
+            <p className="text-sm text-emerald-50/65">
+              No cards played yet in this trick.
+            </p>
           ) : null}
         </div>
       </div>
