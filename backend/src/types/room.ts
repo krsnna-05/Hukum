@@ -33,6 +33,9 @@ export type PublicRoom = {
   roomCode: string;
   handlerId: string;
   status: RoomStatus;
+  minPlayersToStart: number;
+  maxPlayersTotal: number;
+  canStartGame: boolean;
   maxPlayersPerTeam: number;
   totalPlayers: number;
   teams: Record<TeamId, PublicTeam>;

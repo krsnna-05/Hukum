@@ -3,6 +3,7 @@ import { Link, useLocation, useParams } from "react-router";
 import LobbyCapacity from "../components/Room/LobbyCapacity";
 import Navbar from "../components/Navbar";
 import RoomHeader from "../components/Room/RoomHeader";
+import RoomReadiness from "../components/Room/RoomReadiness";
 import TeamColumns from "../components/Room/TeamColumns";
 import TeamSwitchPanel from "../components/Room/TeamSwitchPanel";
 import { useRoomStore } from "../store/roomStore";
@@ -117,6 +118,8 @@ const Room = () => {
               }
             }}
           />
+
+          <RoomReadiness room={activeRoom} />
 
           <LobbyCapacity room={activeRoom} />
 
