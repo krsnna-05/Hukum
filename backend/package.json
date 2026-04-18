@@ -22,5 +22,9 @@
     "npm": "^11.12.1",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.2"
+  },
+  "dependencies": {
+    "redis": "^5.12.1",
+    "socket.io": "^4.8.3"
   }
 }

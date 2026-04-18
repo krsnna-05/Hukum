@@ -1,23 +1,30 @@
 import { ArrowRight, Hash, LogIn } from "lucide-react";
+import { useNavigate } from "react-router";
 import { useRoomStore } from "../../store/roomStore";
 import { useUserStore } from "../../store/userStore";
 
 const JoinGame = () => {
+  const navigate = useNavigate();
+  const playerId = useUserStore((state) => state.userId);
   const playerName = useUserStore((state) => state.playerName);
   const roomCode = useRoomStore((state) => state.roomCodeInput);
-  const activeRoomCode = useRoomStore((state) => state.activeRoomCode);
-  const lastAction = useRoomStore((state) => state.lastAction);
   const setRoomCodeInput = useRoomStore((state) => state.setRoomCodeInput);
   const joinRoom = useRoomStore((state) => state.joinRoom);
+  const isLoading = useRoomStore((state) => state.isLoading);
+  const error = useRoomStore((state) => state.error);
 
   const canJoin = Boolean(playerName && roomCode.trim());
 
-  const handleJoin = () => {
+  const handleJoin = async () => {
     if (!canJoin) {
       return;
     }
 
-    joinRoom();
+    const joinedCode = await joinRoom(playerId, playerName ?? "", roomCode);
+
+    if (joinedCode) {
+      navigate(`/room/${encodeURIComponent(joinedCode)}?status=lobby`);
+    }
   };
 
   return (
@@ -50,10 +57,10 @@ const JoinGame = () => {
         <button
           type="button"
           onClick={handleJoin}
-          disabled={!canJoin}
+          disabled={!canJoin || isLoading}
           className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-cyan-300 px-4 text-sm font-semibold text-slate-950 transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Join room
+          {isLoading ? "Joining..." : "Join room"}
           <ArrowRight className="h-4 w-4" />
         </button>
       </div>
@@ -64,12 +71,7 @@ const JoinGame = () => {
         </p>
       ) : null}
 
-      {lastAction === "joined" && activeRoomCode ? (
-        <div className="mt-4 rounded-xl border border-emerald-300/20 bg-emerald-300/10 px-3 py-2 text-sm text-emerald-50">
-          Ready to join room{" "}
-          <span className="font-semibold text-white">{activeRoomCode}</span>.
-        </div>
-      ) : null}
+      {error ? <p className="mt-3 text-sm text-rose-200">{error}</p> : null}
     </section>
   );
 };
