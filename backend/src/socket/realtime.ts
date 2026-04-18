@@ -1,13 +1,16 @@
 import type { Server as HttpServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
 import { PublicRoom } from "../types/room";
+import { getAllowedOrigins } from "../config/env";
 
 let io: SocketIOServer | null = null;
 
 export const initSocketServer = (httpServer: HttpServer): SocketIOServer => {
+  const allowedOrigins = getAllowedOrigins();
+
   io = new SocketIOServer(httpServer, {
     cors: {
-      origin: "*",
+      origin: allowedOrigins.includes("*") ? "*" : allowedOrigins,
       methods: ["GET", "POST"],
     },
   });

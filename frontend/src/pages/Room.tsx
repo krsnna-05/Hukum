@@ -2,12 +2,12 @@ import { useEffect, useMemo } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 import BiddingBoard from "../components/Room/BiddingBoard";
 import LobbyCapacity from "../components/Room/LobbyCapacity";
-import Navbar from "../components/Navbar";
 import PlayingBoard from "../components/Room/PlayingBoard";
+import PlayerHeader from "../components/Room/PlayerHeader";
 import RoomHeader from "../components/Room/RoomHeader";
 import RoomStartPanel from "../components/Room/RoomStartPanel";
 import RoomReadiness from "../components/Room/RoomReadiness";
-import TeamTugOfWar from "../components/Room/TeamTugOfWar";
+import TeamScoreBoard from "../components/Room/TeamTugOfWar";
 import TeamColumns from "../components/Room/TeamColumns";
 import TeamSwitchPanel from "../components/Room/TeamSwitchPanel";
 import { subscribeRoomUpdates } from "../socket/roomSocket";
@@ -38,6 +38,7 @@ const Room = () => {
   const normalizedCode = roomCode?.toUpperCase() ?? "";
   const isLobby = activeRoom?.status === "lobby";
   const isPlaying = activeRoom?.status === "playing";
+  const isFinished = activeRoom?.status === "finished";
 
   useEffect(() => {
     if (!normalizedCode || !playerName) {
@@ -121,7 +122,6 @@ const Room = () => {
   if (!playerName) {
     return (
       <main className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_36%),linear-gradient(180deg,#0f4a2f_0%,#0b2f21_100%)] text-emerald-50">
-        <Navbar />
         <section className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="rounded-4xl border border-white/12 bg-black/20 p-6 backdrop-blur-md sm:p-8">
             <p className="text-sm text-amber-100/90">
@@ -141,8 +141,6 @@ const Room = () => {
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_36%),linear-gradient(180deg,#0f4a2f_0%,#0b2f21_100%)] text-emerald-50">
-      <Navbar />
-
       <section className="mx-auto flex w-full max-w-5xl flex-col gap-5 px-4 py-10 sm:px-6 lg:px-8">
         <div className="rounded-4xl border border-white/12 bg-black/20 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.24)] backdrop-blur-md sm:p-8">
           <RoomHeader
@@ -154,7 +152,18 @@ const Room = () => {
               }
             }}
           />
+        </div>
 
+        <PlayerHeader
+          player={currentPlayer}
+          teamName={
+            currentPlayer?.team
+              ? activeRoom?.teams[currentPlayer.team]?.name
+              : undefined
+          }
+        />
+
+        <div className="rounded-4xl border border-white/12 bg-black/20 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.24)] backdrop-blur-md sm:p-8">
           {isLobby ? <RoomReadiness room={activeRoom} /> : null}
 
           {isLobby ? (
@@ -168,7 +177,9 @@ const Room = () => {
             />
           ) : null}
 
-          {isLobby ? <TeamTugOfWar room={activeRoom} /> : null}
+          {isLobby || isPlaying || isFinished ? (
+            <TeamScoreBoard room={activeRoom} />
+          ) : null}
 
           {isLobby ? <LobbyCapacity room={activeRoom} /> : null}
 
@@ -214,6 +225,12 @@ const Room = () => {
           ) : null}
 
           {isLobby ? <TeamColumns room={activeRoom} /> : null}
+
+          {isFinished ? (
+            <p className="mt-4 rounded-2xl border border-emerald-300/25 bg-emerald-300/10 px-4 py-3 text-sm text-emerald-50">
+              Match finished. A team reached 50 points.
+            </p>
+          ) : null}
 
           {error ? <p className="mt-4 text-sm text-rose-200">{error}</p> : null}
         </div>

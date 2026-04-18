@@ -1,6 +1,11 @@
 import { createClient } from "redis";
 
+const isProduction = (process.env.NODE_ENV ?? "development") === "production";
 const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
+
+if (isProduction && !process.env.REDIS_URL) {
+  throw new Error("REDIS_URL is required in production.");
+}
 
 export const redisClient = createClient({
   url: redisUrl,

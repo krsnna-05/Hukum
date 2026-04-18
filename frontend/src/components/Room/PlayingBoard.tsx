@@ -1,7 +1,8 @@
-import { Flag, Swords } from "lucide-react";
+import { Flag, Swords, Crown, Zap } from "lucide-react";
 import { useMemo } from "react";
 import { resolveApiUrl } from "../../api/baseUrl";
 import type { Room, Suit, TeamId } from "../../types/room";
+import { getCurrentTrickWinner } from "../../utils/cardPower";
 
 type PlayingBoardProps = {
   room: Room | null;
@@ -134,6 +135,17 @@ const PlayingBoard = ({
     };
   }, [room]);
 
+  const currentTrickWinner = useMemo(() => {
+    if (!room || !room.trumpSuit || !room.leadSuit) {
+      return null;
+    }
+    return getCurrentTrickWinner(
+      room.currentHand ?? [],
+      room.trumpSuit,
+      room.leadSuit,
+    );
+  }, [room?.currentHand, room?.trumpSuit, room?.leadSuit]);
+
   return (
     <section className="mt-4 rounded-3xl border border-white/12 bg-[linear-gradient(180deg,rgba(15,23,42,0.82),rgba(2,6,23,0.72))] p-4 shadow-[0_18px_40px_rgba(2,6,23,0.28)] backdrop-blur-md sm:p-5">
       <div className="max-w-2xl">
@@ -205,21 +217,37 @@ const PlayingBoard = ({
         </div>
 
         <div className="mt-3 flex flex-wrap gap-2">
-          {(room?.currentHand ?? []).map((move) => (
-            <div
-              key={`${move.playerId}-${move.card.code}`}
-              className="w-[88px] rounded-lg border border-white/10 bg-black/25 p-2 sm:w-[98px]"
-            >
-              <p className="truncate text-[10px] uppercase tracking-[0.14em] text-emerald-50/65">
-                {playerLookup.get(move.playerId)?.name ?? "Unknown"}
-              </p>
-              <img
-                src={resolveApiUrl(move.card.svgPath)}
-                alt={move.card.svgName}
-                className="mt-1.5 aspect-3/4 w-full rounded-md border border-white/10 bg-white/95 object-cover"
-              />
-            </div>
-          ))}
+          {(room?.currentHand ?? []).map((move) => {
+            const isWinner =
+              currentTrickWinner?.playerId === move.playerId &&
+              currentTrickWinner?.card.code === move.card.code;
+
+            return (
+              <div
+                key={`${move.playerId}-${move.card.code}`}
+                className={[
+                  "w-22 rounded-lg border p-2 sm:w-24",
+                  isWinner
+                    ? "border-yellow-400/60 bg-yellow-400/15 shadow-[0_0_12px_rgba(250,204,21,0.3)]"
+                    : "border-white/10 bg-black/25",
+                ].join(" ")}
+              >
+                <div className="flex items-start justify-between gap-1">
+                  <p className="truncate text-[10px] uppercase tracking-[0.14em] text-emerald-50/65">
+                    {playerLookup.get(move.playerId)?.name ?? "Unknown"}
+                  </p>
+                  {isWinner && (
+                    <Crown className="h-3 w-3 flex-shrink-0 text-yellow-400" />
+                  )}
+                </div>
+                <img
+                  src={resolveApiUrl(move.card.svgPath)}
+                  alt={move.card.svgName}
+                  className="mt-1.5 aspect-3/4 w-full rounded-md border border-white/10 bg-white/95 object-cover"
+                />
+              </div>
+            );
+          })}
 
           {(room?.currentHand?.length ?? 0) === 0 ? (
             <p className="text-sm text-emerald-50/65">
@@ -228,6 +256,42 @@ const PlayingBoard = ({
           ) : null}
         </div>
       </div>
+
+      {currentTrickWinner && (room?.currentHand?.length ?? 0) > 0 ? (
+        <div className="mt-4 rounded-2xl border border-yellow-400/30 bg-yellow-400/10 p-4">
+          <div className="flex items-center gap-2">
+            <Crown className="h-5 w-5 text-yellow-400" />
+            <p className="text-sm font-semibold text-white">
+              Currently winning
+            </p>
+          </div>
+          <div className="mt-3 flex items-center gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.14em] text-yellow-100/70">
+                Player
+              </p>
+              <p className="mt-1 font-semibold text-white">
+                {playerLookup.get(currentTrickWinner.playerId)?.name ??
+                  "Unknown"}
+              </p>
+              <div className="mt-2 flex items-center gap-2 text-xs">
+                <Zap className="h-3.5 w-3.5 text-yellow-300" />
+                <span className="text-yellow-100/70">Rank strength</span>
+                <span className="font-semibold text-yellow-300">
+                  {currentTrickWinner.strength}/13
+                </span>
+              </div>
+            </div>
+            <div className="ml-auto">
+              <img
+                src={resolveApiUrl(currentTrickWinner.card.svgPath)}
+                alt={currentTrickWinner.card.svgName}
+                className="h-20 rounded-lg border border-yellow-400/30 bg-white/95 object-cover"
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
         <p className="text-sm font-semibold text-white">Player progress</p>

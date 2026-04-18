@@ -4,7 +4,7 @@ export type TeamId = (typeof TEAM_IDS)[number];
 
 import type { Card, Suit } from "../game/deck";
 
-export type RoomStatus = "lobby" | "bid" | "playing";
+export type RoomStatus = "lobby" | "bid" | "playing" | "finished";
 
 export type BidPhase = "collecting" | "chooseTrump";
 

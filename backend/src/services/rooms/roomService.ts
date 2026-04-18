@@ -221,6 +221,44 @@ const areAllHandsEmpty = (hands: Record<string, Card[]>): boolean => {
   return Object.values(hands).every((cards) => cards.length === 0);
 };
 
+const FIRST_TO_SCORE = 50;
+
+const shouldEndPlayingRound = (
+  room: Room,
+): { shouldEnd: boolean; bidderTeam: TeamId | null } => {
+  const contractBid = room.highestBidValue ?? 0;
+  const bidderTeam = room.highestBidderId
+    ? (room.players[room.highestBidderId]?.team ?? null)
+    : null;
+
+  if (!bidderTeam || contractBid <= 0) {
+    return { shouldEnd: false, bidderTeam };
+  }
+
+  const bidderTeamHandsWon = room.teams[bidderTeam].reduce(
+    (sum, playerId) => sum + (room.handsWon[playerId] ?? 0),
+    0,
+  );
+
+  if (bidderTeamHandsWon >= contractBid) {
+    return { shouldEnd: true, bidderTeam };
+  }
+
+  const totalPlayers = room.bidOrder.length;
+  const remainingCardsTotal = Object.values(room.hands).reduce(
+    (sum, hand) => sum + hand.length,
+    0,
+  );
+  const remainingTricks =
+    totalPlayers > 0 ? Math.floor(remainingCardsTotal / totalPlayers) : 0;
+
+  if (bidderTeamHandsWon + remainingTricks < contractBid) {
+    return { shouldEnd: true, bidderTeam };
+  }
+
+  return { shouldEnd: false, bidderTeam };
+};
+
 const applyPlayingRoundResult = (room: Room): void => {
   const contractBid = room.highestBidValue ?? 0;
 
@@ -240,11 +278,37 @@ const applyPlayingRoundResult = (room: Room): void => {
     0,
   );
   const bidSucceeded = bidderTeamHandsWon >= contractBid;
-  const winningTeam = bidSucceeded ? bidderTeam : opposingTeam;
-  const losingTeam = getOpposingTeam(winningTeam);
+  const scoringTeam = bidSucceeded ? bidderTeam : opposingTeam;
+  const scoreAward = bidSucceeded ? contractBid : 2 * contractBid;
 
-  room.teamPoints[winningTeam] += contractBid;
-  room.teamPoints[losingTeam] -= 2 * contractBid;
+  room.teamPoints[scoringTeam] += scoreAward;
+};
+
+const finishGameIfNeeded = (room: Room): boolean => {
+  const bidPoints = room.teamPoints.bid;
+  const challengePoints = room.teamPoints.challenge;
+
+  if (bidPoints < FIRST_TO_SCORE && challengePoints < FIRST_TO_SCORE) {
+    return false;
+  }
+
+  room.status = "finished";
+  room.bidPhase = null;
+  room.currentBidTeamId = null;
+  room.currentBidPlayerId = null;
+  room.highestBidderId = null;
+  room.highestBidValue = null;
+  room.trumpSuit = null;
+  room.leadSuit = null;
+  room.playingPlayerId = null;
+  room.bidOrder = [];
+  room.bids = {};
+  room.hands = {};
+  room.currentHand = [];
+  room.handsWon = {};
+  room.tricksCompleted = 0;
+
+  return true;
 };
 
 const resetPostRoundToLobby = (room: Room): void => {
@@ -447,10 +511,9 @@ export const applyRoundResult = async (
     throw new Error("Room not found.");
   }
 
-  const losingTeam = getOpposingTeam(winningTeam);
-
   room.teamPoints[winningTeam] += bid;
-  room.teamPoints[losingTeam] -= 2 * bid;
+
+  finishGameIfNeeded(room);
 
   await saveRoom(room);
 
@@ -761,9 +824,14 @@ export const playCard = async (
     room.leadSuit = null;
     room.playingPlayerId = winnerPlayerId;
 
-    if (areAllHandsEmpty(room.hands)) {
+    const roundShouldEnd = shouldEndPlayingRound(room);
+
+    if (roundShouldEnd.shouldEnd || areAllHandsEmpty(room.hands)) {
       applyPlayingRoundResult(room);
-      resetPostRoundToLobby(room);
+
+      if (!finishGameIfNeeded(room)) {
+        resetPostRoundToLobby(room);
+      }
     }
   }
 

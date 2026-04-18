@@ -2,7 +2,7 @@ export type TeamId = "bid" | "challenge";
 
 export type Suit = "spades" | "hearts" | "diamonds" | "clubs";
 
-export type RoomStatus = "lobby" | "bid" | "playing";
+export type RoomStatus = "lobby" | "bid" | "playing" | "finished";
 
 export type BidPhase = "collecting" | "chooseTrump";
 

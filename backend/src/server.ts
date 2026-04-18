@@ -5,6 +5,7 @@ import { connectRedis, disconnectRedis } from "./config/redis";
 import { initSocketServer } from "./socket/realtime";
 
 const PORT = Number(process.env.PORT) || 3000;
+const HOST = process.env.HOST || "0.0.0.0";
 
 const startServer = async (): Promise<void> => {
   try {
@@ -13,8 +14,8 @@ const startServer = async (): Promise<void> => {
     const httpServer = createServer(app);
     initSocketServer(httpServer);
 
-    httpServer.listen(PORT, () => {
-      console.log(`Server is running on http://localhost:${PORT}`);
+    httpServer.listen(PORT, HOST, () => {
+      console.log(`Server is running on http://${HOST}:${PORT}`);
     });
   } catch (error) {
     console.error("Failed to start server:", error);
