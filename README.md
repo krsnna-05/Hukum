@@ -37,6 +37,55 @@ Required:
 
 - `VITE_API_BASE_URL=https://your-backend-domain.com`
 
+## Deploy on Railway + Vercel
+
+Recommended setup:
+
+- Deploy `backend/` to Railway
+- Deploy `frontend/` to Vercel
+
+### 1) Backend on Railway
+
+Create a Railway service from the `backend/` directory.
+
+Set these Railway environment variables:
+
+```env
+NODE_ENV=production
+HOST=0.0.0.0
+PORT=3000
+CORS_ORIGIN=https://your-frontend.vercel.app
+REDIS_URL=rediss://default:password@your-upstash-host:6379
+```
+
+Notes:
+
+- If you use a custom frontend domain, include it in `CORS_ORIGIN`.
+- Multiple origins are allowed as comma-separated values:
+  `https://your-frontend.vercel.app,https://play.yourdomain.com`
+
+### 2) Frontend on Vercel
+
+Create a Vercel project from the `frontend/` directory.
+
+Set this Vercel environment variable:
+
+```env
+VITE_API_BASE_URL=https://your-backend.railway.app
+```
+
+Important:
+
+- `VITE_API_BASE_URL` must be the public Railway backend URL (HTTPS).
+- After changing envs in Vercel, trigger a redeploy.
+- SPA routing is handled by `frontend/vercel.json` rewrite config.
+
+### 3) Post-deploy checks
+
+1. Open frontend URL and create/join a room.
+2. Verify backend health: `https://your-backend.railway.app/api/health`
+3. Confirm Socket.IO and gameplay updates work across devices.
+
 ## Local Development
 
 ### 1) Backend
